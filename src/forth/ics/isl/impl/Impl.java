@@ -5,6 +5,7 @@
  */
 package forth.ics.isl.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -24,8 +26,10 @@ public class Impl {
     
     public static int fcrepoImportExport(String fcrepoLocation, String fcrepo) {
         
+        System.out.println("Fcrepo stin Impl:"+fcrepoLocation+fcrepo);
         try {
-            Process p = Runtime.getRuntime().exec("java -jar fcrepo-import-export-0.3.0-SNAPSHOT.jar --mode export --resource " + fcrepoLocation + fcrepo + "--dir . --binaries");
+            Process p = Runtime.getRuntime().exec("java -jar fcrepo-import-export-0.3.0-SNAPSHOT.jar --mode export --resource " + fcrepoLocation + fcrepo + " --dir . --binaries");
+            //Process p = Runtime.getRuntime().exec("java -jar fcrepo-import-export-0.3.0-SNAPSHOT.jar --mode export -R " + fcrepoLocation + fcrepo + "--dir . --binaries");
             p.waitFor();
             return p.exitValue();
       
@@ -38,15 +42,20 @@ public class Impl {
     }
     
     
-    public static void createZipFile(String tomcatLocation, String fileName) throws IOException {
+    public static String createZipFile(String tomcatLocation, String fileName, String fcrepo) throws IOException {
     
-        if(Files.exists(Paths.get(tomcatLocation + fileName)) == true)
-            fileName += new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+        //System.out.println("+++++++++++++++++++fileName:"+tomcatLocation+fileName);
         
-        Path zipFilePath = Files.createFile(Paths.get(tomcatLocation + fileName));
-
+        if(Files.exists(Paths.get(tomcatLocation + fileName + ".zip")) == true) {
+            fileName += new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+            
+            System.out.println("++++++++++++++++NewFileName:"+fileName);
+        }
+        
+        Path zipFilePath = Files.createFile(Paths.get(tomcatLocation + fileName +".zip"));
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
-            Path sourceDirPath = Paths.get(tomcatLocation + "fcrepo");
+            //Path sourceDirPath = Paths.get(tomcatLocation +"fcrepo/rest/" + fcrepo);
+            Path sourceDirPath = Paths.get(tomcatLocation +"fcrepo/rest/");
 
             Files.walk(sourceDirPath).filter(path -> !Files.isDirectory(path))
                     .forEach(path -> {
@@ -60,6 +69,11 @@ public class Impl {
                         }
                     });
         }
+       
+        FileUtils.deleteDirectory(new File(tomcatLocation+"fcrepo/rest"));
+        
+        System.out.println("Returned filename: " + fileName);
+        return fileName;
     }
         
 }
